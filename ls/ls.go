@@ -9,27 +9,48 @@ import (
 
 const (
 	alphabeticOrder = iota
+	reverseOrder
+	modificationTimeOrder
 )
+
+type Flags struct {
+	Dir                  string
+	NoFlags              bool
+	IgnoreEntries        bool
+	Recursive            bool
+	LongListingFormat    bool
+	ReverseSort          bool
+	ModificationTimeSort bool
+}
 
 func Help() {
 	fmt.Println("Help")
 }
 
 func ProcessArgs(args ...string) {
+	f := new(Flags)
 	if len(args) == 1 {
-		if err := PrintDirectory(); err != nil {
-			panic(err)
-		}
-		return
+		f.NoFlags = true
+		f.IgnoreEntries = true
+		f.Dir = "."
+	}
+	if err := PrintDirectory(f); err != nil {
+		panic(err)
 	}
 }
 
-func PrintDirectory() error {
-	dirContent, err := getDirContent(".", alphabeticOrder)
+func PrintDirectory(f *Flags) (err error) {
+	var dirContent []fs.DirEntry
+	if f.NoFlags {
+		dirContent, err = getDirContent(f.Dir, alphabeticOrder)
+	}
 	if err != nil {
 		return err
 	}
 	for i, dir := range dirContent {
+		if f.IgnoreEntries && dir.Name()[0] == '.' {
+			continue
+		}
 		if dir.Type().IsDir() {
 			fmt.Printf(Purple(dir.Name()))
 		} else {
