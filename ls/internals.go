@@ -15,6 +15,7 @@ func getDotsInfo() []Object {
 	ugstat := fstat.Sys().(*syscall.Stat_t)
 	uid := ugstat.Uid
 	gid := ugstat.Gid
+	nlinks := ugstat.Nlink
 
 	u := strconv.FormatUint(uint64(uid), 10)
 	g := strconv.FormatUint(uint64(gid), 10)
@@ -23,13 +24,14 @@ func getDotsInfo() []Object {
 	groupInfo, _ := user.LookupGroupId(g)
 
 	dot := Object{
-		Name:    ".",
-		IsDir:   fstat.IsDir(),
-		Perm:    fstat.Mode().Perm().String(),
-		User:    userInfo.Username,
-		Group:   groupInfo.Name,
-		ModTime: fstat.ModTime(),
-		Size:    fstat.Size(),
+		Name:         ".",
+		HardLinksNum: nlinks,
+		IsDir:        fstat.IsDir(),
+		Perm:         fstat.Mode().Perm().String(),
+		User:         userInfo.Username,
+		Group:        groupInfo.Name,
+		ModTime:      fstat.ModTime(),
+		Size:         fstat.Size(),
 	}
 
 	fstat, err = os.Stat("..")
