@@ -56,55 +56,15 @@ func ProcessArgs(args ...string) {
 	}
 
 	if len(directories) == 0 {
-		PrintDirectory(f, ".")
+		objects := processDirArgs(f, ".")
+		printObjects(objects)
 		return
 	}
-
-	for _, dir := range directories {
-		if err := PrintDirectory(f, dir); err != nil {
-			panic(err)
-		}
+	allObjects := make([]Object, 0)
+	for _, directory := range directories {
+		allObjects = append(allObjects, processDirArgs(f, directory)...)
 	}
-}
-
-func PrintDirectory(f *Flags, dir string) error {
-	var directories []string
-	dirContent, err := getDirContent(dir, alphabeticOrder)
-	if err != nil {
-		return err
-	}
-
-	if f.IncludeEntries {
-		fmt.Printf(Purple("."))
-		fmt.Print("  ")
-		fmt.Printf(Purple(".."))
-		fmt.Print("  ")
-	}
-
-	for i, dir := range dirContent {
-		if !f.IncludeEntries && dir.Name()[0] == '.' {
-			continue
-		}
-		if dir.Type().IsDir() {
-			if f.Recursive {
-				directories = append(directories, dir.Name())
-			}
-			fmt.Printf(Purple(dir.Name()))
-		} else {
-			fmt.Printf("%s", dir.Name())
-		}
-		if i < len(dirContent)-1 {
-			fmt.Printf("  ")
-		} else {
-			fmt.Println()
-		}
-	}
-
-	for _, intDir := range directories {
-		PrintDirectory(f, intDir)
-	}
-
-	return nil
+	printObjects(allObjects)
 }
 
 func getDirContent(dir string, order int) ([]fs.DirEntry, error) {
@@ -130,4 +90,28 @@ func getDirContent(dir string, order int) ([]fs.DirEntry, error) {
 		})
 	}
 	return dirContent, nil
+}
+
+func processDirArgs(f *Flags, dir string) []Object {
+	fd, err := os.Open(dir)
+	if err != nil {
+		panic(err)
+	}
+	fileEntries, err := fd.ReadDir(-1)
+	if err != nil {
+		panic(err)
+	}
+
+	allObjects := make([]Object, 0, len(fileEntries))
+	if f.IncludeEntries {
+		allObjects = append(allObjects, getDotsInfo()...)
+	}
+
+	for _, entry := range fileEntries {
+		if !f.IncludeEntries && entry.Name()[0] == '.' {
+			continue
+		}
+
+	}
+	return nil
 }
